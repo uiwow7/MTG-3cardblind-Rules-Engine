@@ -56,6 +56,16 @@ class Phase:
         self.main2 = auto()
         self.end = auto()
         self.main = [self.main1, self.main2]
+        
+@dataclass
+class Result:
+    def __init__(self):
+        self.win = 2
+        self.tie = 1
+        self.loss = 0
+        self.tieloss = 0.5
+        self.winloss = 1
+        self.wintie = 1.5
 
 class Effect:
     def __init__(self, fns, game):
@@ -114,6 +124,7 @@ class Card:
         self.game = game
         self.summoningSick = False
         self.tapped = False
+        self.game = game
         
         self.ogmisc = {}
         self.ogname = name
@@ -227,6 +238,66 @@ class Card:
         for ability in self.abilities:
             if type(ability) == Trigger:
                 ability.recieve(Event("cleanup"))
+    def opupkeepStart(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opupkeepstart"))
+    def opupkeepEnd(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opupkeepend"))
+    def opdrawStart(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opdrawstart"))
+    def opdrawEnd(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opdrawend"))
+    def opmain1Start(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opmain1start"))
+    def opmain1End(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opmain1end"))
+    def opbeginCombat(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opbegincombat"))
+    def opdeclareAttackers(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opdeclareattackers", self.game.attackers))
+    def opdeclareBlockers(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opdeclareblockers", self.game.blockers))
+    def opendCombat(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opendcombat"))
+    def opmain2Start(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opmain2start"))
+    def opmain2End(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opmain2end"))
+    def opendStepStart(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opendstepstart"))
+    def opendStepEnd(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opendstepend"))
+    def opcleanup(self):
+        for ability in self.abilities:
+            if type(ability) == Trigger:
+                ability.recieve(Event("opcleanup"))
     def reset(self):
         self.cardtypes = self.ogcardtypes.copy()
         self.subtypes = self.ogsubtypes.copy()
@@ -284,6 +355,7 @@ class Player:
                 for ability in c.abilities:
                     if type(ability) == Trigger:
                         ability.recieve(Event("draw"))
+                        
     def lose(self):
         """
         Loses the game. Sends out trigger message, then checks life total and canLoseGame. If both of those are correct, it sends the loss message to the game.
