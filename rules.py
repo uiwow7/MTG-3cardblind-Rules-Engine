@@ -89,6 +89,14 @@ class Life:
         return game.players[0].life >= self.a
     def apply(self, game):
         game.players[0].life -= self.a
+        
+class Tap:
+    def __init__(self, creature):
+        self.c = creature
+    def validate(self, game):
+        return not self.c.tapped
+    def apply(self, game):
+        self.c.tapped = True
  
 class ActivatedAbility:
     def __init__(self, cost, effect, isSorcery = False):
@@ -124,7 +132,6 @@ class Card:
         self.game = game
         self.summoningSick = False
         self.tapped = False
-        self.game = game
         
         self.ogmisc = {}
         self.ogname = name
@@ -156,13 +163,13 @@ class Card:
                 self.summoningSick = True
     def validateCost(self):
         """
-        Checks if the player is able to pay a cost.
+        Checks if a player is able to pay a cost for a spell of ability.
         """
         endr = self.cost
         for m in self.game.players[0].possibleMana:
             try:
                 endr.pop(self.cost.index(m.produce))
-                self.game.players[0].possibleMana.index(m).tapped = True
+                self.game.players[0].possibleMana.index(m).apply()
             except:
                 print("TODO: Extra mana. Relay to decision-maker for optimal play.")
                 exit(1)
@@ -320,10 +327,12 @@ class Card:
                 ability.recieve(Event("die"))
                 ability.recieve(Event("zonechange", self.zone))
         self.reset()
+        
 class Player:
     def __init__(self, deck: list[Card]):
+        self.begin = deck
         self.library: list[Card] = []
-        self.hand: list[Card] = deck
+        self.hand: list[Card] = self.begin
         self.graveyard: list[Card] = []
         self.exile: list[Card] = []
         self.battlefield: list[Card] = []
@@ -332,6 +341,7 @@ class Player:
         self.counters = []
         self.game = None # MUST BE SET LATER
         self.canLoseGame = True
+        self.possibleMana = []
     def update(self):
         """
         Checks state-based actions and updates variables. Needs to be called every time the game state is changed.
@@ -339,6 +349,7 @@ class Player:
         for c in self.battlefield:
             if CardType.land in c.cardtypes:
                 self.lands.append(c)
+                self.possibleMana.append(c.misc["manaProduction"])
             elif CardType.creature in c.cardtypes:
                 if c.tou <= 0:
                     c.kill()
