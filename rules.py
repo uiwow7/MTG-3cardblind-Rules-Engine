@@ -66,16 +66,22 @@ class Result:
         self.tieloss = 0.5
         self.winloss = 1
         self.wintie = 1.5
+        self.losstie = 0.5
+        self.losswin = 1
+        self.tiewin= 1.5
 
 class Effect:
     def __init__(self, fns, game):
         self.fns = fns 
         self.game = game
         self.players = game.players
-    def run(self, event, iss = False):
+    def run(self, event, iss = False, putOnStack  = True):
         for fn in self.fns:
-            if len(self.game.stack) == 0 and self.game.phase in Phase.main or not iss:
-                self.game.stack.append([fn, event, iss])
+            if putOnStack:
+                if len(self.game.stack) == 0 and self.game.phase in Phase.main or not iss:
+                    self.game.stack.append([fn, event, iss])
+            else:
+                fn(event, iss, self.game)
             
 class Event:
     def __init__(self, typ, info = None) -> None:
@@ -117,7 +123,7 @@ class Trigger:
                 e.run(event)
        
 class Card:
-    def __init__(self, game, name: str, cardtypes: list, subtypes: list, abilities: list, cost: list, pow = None, tou = None, loyalty = None, counters: list = []):
+    def __init__(self, game, name: str, cardtypes: list, subtypes: list, abilities: list, cost: list, tags: list = [], pow = None, tou = None, loyalty = None, counters: list = []):
         self.name = name
         self.cardtypes = cardtypes
         self.subtypes = subtypes
@@ -132,6 +138,7 @@ class Card:
         self.game = game
         self.summoningSick = False
         self.tapped = False
+        self.tags = tags
         
         self.ogmisc = {}
         self.ogname = name
@@ -155,6 +162,8 @@ class Card:
         """
         if self.zone in self.isCastable and (len(self.game.stack) == 0 and self.game.phase in Phase.main or not CardType.land in self.cardtypes) and self.validateCost():
             self.zone = Zone.battlefield
+            if "etbstapped" in self.tags:
+                self.tapped = True
             for ability in self.abilities:
                 if type(ability) == Trigger:
                     ability.recieve(Event("etb"))
@@ -163,7 +172,7 @@ class Card:
                 self.summoningSick = True
     def validateCost(self):
         """
-        Checks if a player is able to pay a cost for a spell of ability.
+        Checks if a player is able to pay the cost of this card (lands will have no cost, and so this function will always return True for them).
         """
         endr = self.cost
         for m in self.game.players[0].possibleMana:
@@ -342,6 +351,17 @@ class Player:
         self.game = None # MUST BE SET LATER
         self.canLoseGame = True
         self.possibleMana = []
+        self.instantSpeed = []
+        for card in self.begin:
+            if CardType.instant in card.cardtypes or "flash" in card.tags:
+                self.instantSpeed.append(1)
+            else:
+                for ability in card.abilities:
+                    if type(ability) == ActivatedAbility:
+                        if not ability.isSorcery:
+                            self.instantSpeed.append(2)
+        self.instantSpeed = not len(self.instantSpeed) == 0
+                        
     def update(self):
         """
         Checks state-based actions and updates variables. Needs to be called every time the game state is changed.
@@ -378,3 +398,34 @@ class Player:
                     
         if self.life <= 0 and self.canLoseGame:
             self.game.winner = self.game.players[1]
+            
+class Game:
+    def __init__(self, players: list[Player]):
+        self.players = players
+        self.winner = None
+        self.stack = []
+        self.landsPlayedThisTurn = []
+        self.possibleMana = []
+        self.landsPerTurn = 1
+    def validateCost(self, cost):
+        """
+        Checks if a player is able to pay a cost for a spell of ability.
+        """
+        endr = cost
+        for m in self.players[0].possibleMana:
+            try:
+                endr.pop(cost.index(m.produce))
+                self.players[0].possibleMana.index(m).apply()
+            except:
+                print("TODO: Extra mana. Relay to decision-maker for optimal play.")
+                exit(1)
+        if len(endr) == 0:
+            return True
+        for i in endr:
+            if i in Mana.all:
+                return False
+            else:
+                if not i.validate(self): return False # anything in the cost list should have a validate function
+        for i in endr:
+            i.apply(self) # make sure the player actually pays the cost
+        return True
