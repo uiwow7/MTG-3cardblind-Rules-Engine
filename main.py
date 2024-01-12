@@ -24,21 +24,27 @@ class Manager:
                 nlands.insert(i - taplands, land)
         return nlands
     def optimalSpellPlaySorcerySpeed(self, game: rules.Game, spells: list[rules.Card]):
+        # PRIORITY: [discard (unless is removal), ld, removal (unless dead immediately), threats (unless removal)]
         nspells = []
         ldgs = 0
         hds = 0
         for spell in spells:
-            if not game.validateCost(spell.cost):
+            if game.validateCost(spell.cost, False):
                 if "disruption-hand" in spell.tags:
-                    nspells.insert(ldgs, spell)
-                    hds += 1
+                    if "removal" in spell.tags:
+                        nspells.append(spell)
+                    else:
+                        nspells.insert(ldgs, spell)
+                        hds += 1
                 if "disruption-land" in spell.tags:
                     if len(game.players[1].lands) <= 0:
                         nspells.append(spell)
                     else:
-                        nspells .insert(0, spell)
+                        nspells.insert(0, spell)
                         ldgs += 1
-                if ""
+                if "removal" in spell.tags:
+                    pass
+                    
     def turnCycle(self):
         self.g1.landsPlayedThisTurn = []
         self.g2.landsPlayedThisTurn = []
