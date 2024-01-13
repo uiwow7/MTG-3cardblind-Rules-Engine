@@ -56,7 +56,7 @@ class Manager:
         # MAIN PHASE
         # LAND DROP
         possibleLands = []
-        for card in self.me.begin:
+        for card in self.g1.me.begin:
             if rules.CardType.land in card.cardtypes:
                 possibleLands.append(card)
         self.optimalLandPlay(possibleLands)[0].play()

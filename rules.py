@@ -79,10 +79,14 @@ class Effect:
         for fn in self.fns:
             if putOnStack:
                 if len(self.game.stack) == 0 and self.game.phase in Phase.main or not iss:
-                    self.game.stack.append([fn, event, iss])
+                    self.game.stack.append([fn, event])
             else:
-                fn(event, iss, self.game)
-            
+                fn(event, self.game)
+    def resolve(self, efl: list):
+        fn = efl[0]
+        event = efl[1]
+        fn(event, self.game)
+                
 class Event:
     def __init__(self, typ, info = None) -> None:
         self.typ = typ
@@ -422,7 +426,7 @@ class Player:
         self.instantSpeed = []
         self.creatures = []
         for card in self.begin:
-            if CardType.instant in card.cardtypes or "flash" in card.tags:
+            if "instant-speed" in card.tags:
                 self.instantSpeed.append(1)
             else:
                 for ability in card.abilities:
@@ -450,6 +454,8 @@ class Player:
                 poison += 1
         if self.life <= 0 or poison >= 10:
             self.lose()
+            
+        if len(self.game.stack) 
     def draw(self):
         if len(self.deck) > 0:
             self.hand.append(self.deck.pop())
@@ -502,3 +508,8 @@ class Game:
         for i in endr:
             if payCost: i.apply(self) # make sure the player actually pays the cost
         return True
+    def resolveAll(self):
+        for item in self.stack.reverse():
+            Effect.resolve(item)
+    def resolve(self):
+        Effect.resolve(self.stack[-1])
