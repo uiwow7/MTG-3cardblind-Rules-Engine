@@ -139,8 +139,8 @@ class Card:
         self.summoningSick = False
         self.tapped = False
         self.tags = tags
+        self.misc = {}
         
-        self.ogmisc = {}
         self.ogname = name
         self.ogcardtypes = cardtypes
         self.ogsubtypes = subtypes
@@ -468,8 +468,8 @@ class Player:
                     ability.recieve(Event("lose"))
                     
         if self.life <= 0 and self.canLoseGame:
-            self.game.winner = self.game.players[1]
-            
+            self.game.result = Result.loss
+                        
 class Game:
     def __init__(self, players: list[Player]):
         self.players = players
@@ -478,6 +478,8 @@ class Game:
         self.landsPlayedThisTurn = []
         self.possibleMana = []
         self.landsPerTurn = 1
+        self.opponent = players[1]
+        self.me = players[0]
     def validateCost(self, cost, payCost = True):
         """
         Checks if a player is able to pay a cost for a spell of ability.
